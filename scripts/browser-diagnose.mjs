@@ -1,0 +1,12 @@
+import { chromium } from "playwright";
+const browser = await chromium.launch({channel:"chrome"});
+const page = await browser.newPage();
+page.on("pageerror",e=>console.log("PAGEERROR",e.message));
+page.on("console",m=>{if(m.type()==="error")console.log("CONSOLE",m.text().slice(0,500));});
+page.on("requestfailed",r=>console.log("FAILED",r.url(),r.failure()));
+await page.goto("http://127.0.0.1:5173/poc");
+await page.waitForTimeout(2000);
+await page.getByRole("button",{name:"180개 측정"}).click();
+await page.waitForTimeout(5000);
+console.log((await page.locator("body").innerText()).slice(0,1000));
+await browser.close();
