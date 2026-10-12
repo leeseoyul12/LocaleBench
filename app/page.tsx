@@ -449,10 +449,15 @@ export default function Home() {
         <span className="brand-mark">
           <Braces size={28} />
         </span>
-        <h1>LocaleBench</h1>
+        <h1>LocaleBench — 다국어 번역 UI 검사</h1>
+        <p style={{ maxWidth: "36rem", padding: "0 24px", textAlign: "center" }}>
+          독일어·프랑스어·한국어 번역문을 여러 폰트와 너비에서 검사하고,
+          실제 브라우저 측정으로 UI 넘침과 변수 오류를 찾아 수정 전후를 비교하세요.
+        </p>
         <p>
           <Loader2 className="spin" size={15} /> 작업공간을 불러오는 중입니다
         </p>
+        <noscript>문자열 가져오기와 UI 검사를 사용하려면 JavaScript를 켜 주세요.</noscript>
       </main>
     );
   return (

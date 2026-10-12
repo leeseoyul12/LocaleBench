@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /poc
+Disallow: /signin-with-chatgpt
+Disallow: /signout-with-chatgpt
+Disallow: /callback
+
+Sitemap: https://localebench-ui-lab.almondhawk7.chatgpt.site/sitemap.xml
