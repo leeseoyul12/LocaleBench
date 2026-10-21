@@ -70,6 +70,7 @@ test("built Worker: D1 owner isolation, immutable history, origins, limits and m
       signedIn: false,
       cloud: false,
       google: false,
+      gemini: false,
     });
     assert.equal((await call(a, "POST", "/api/projects", p)).status, 200);
     let list = (await (await call(a)).json()).projects;
@@ -116,6 +117,8 @@ test("built Worker: D1 owner isolation, immutable history, origins, limits and m
       503,
     );
     assert.equal((await call(a, "DELETE", "/api/projects/" + p.id, {})).status, 200);
+    assert.equal((await call(undefined, "POST", "/api/suggest", {})).status, 401);
+    assert.equal((await call(a, "POST", "/api/suggest", {})).status, 503);
     assert.equal((await (await call(a)).json()).projects.length, 0);
   } finally {
     await mf.dispose();

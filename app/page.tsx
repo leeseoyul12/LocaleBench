@@ -47,8 +47,16 @@ import {
 import { createProject } from "../lib/samples";
 import { measureProject } from "../lib/measure";
 import { listLocal, saveLocal, deleteLocal } from "../lib/local-store";
+import AiSuggestions from "../components/ai-suggestions";
 type View = "workspace" | "matrix" | "results" | "history" | "settings";
-type Status = { signedIn: boolean; cloud: boolean; google: boolean; name?: string; used?: number };
+type Status = {
+  signedIn: boolean;
+  cloud: boolean;
+  google: boolean;
+  gemini?: boolean;
+  name?: string;
+  used?: number;
+};
 type Modal = "new" | "import" | "delete" | "export" | "restore" | null;
 const language: Record<Locale, string> = { de: "독일어", fr: "프랑스어", ko: "한국어" };
 const componentName = { button: "버튼", label: "라벨", banner: "한줄 배너" };
@@ -302,6 +310,34 @@ export default function Home() {
       setBusy("");
     }
   }
+  async function applyAiSuggestion(text: string) {
+    if (!project || !entry || busy) return;
+    setBusy("AI 후보 적용·검사 중");
+    setError("");
+    try {
+      const next = structuredClone(project);
+      const target = next.entries.find((e) => e.key === entry.key)!;
+      if (parity(target.source, text).length) throw new Error("AI 후보의 변수가 원문과 다릅니다.");
+      target.translations[locale] = text;
+      next.revision += 1;
+      const run = await measureProject(next);
+      next.runs = [run, ...next.runs].slice(0, 20);
+      next.updatedAt = new Date().toISOString();
+      setProjects((all) =>
+        all.map((p) => (p.id === project.id && p.revision === project.revision ? next : p)),
+      );
+      setHistoryId("");
+      await saveLocal(next);
+      if (status.cloud) await sync(next);
+      setToast(
+        "AI 후보를 적용하고 실제 UI 검사를 완료했습니다. 실행 이력에서 이전 결과와 비교하세요.",
+      );
+    } catch (e) {
+      setError(message(e));
+    } finally {
+      setBusy("");
+    }
+  }
   async function translate() {
     if (!project || busy) return;
     if (!status.google) {
@@ -451,8 +487,8 @@ export default function Home() {
         </span>
         <h1>LocaleBench — 다국어 번역 UI 검사</h1>
         <p style={{ maxWidth: "36rem", padding: "0 24px", textAlign: "center" }}>
-          독일어·프랑스어·한국어 번역문을 여러 폰트와 너비에서 검사하고,
-          실제 브라우저 측정으로 UI 넘침과 변수 오류를 찾아 수정 전후를 비교하세요.
+          독일어·프랑스어·한국어 번역문을 여러 폰트와 너비에서 검사하고, 실제 브라우저 측정으로 UI
+          넘침과 변수 오류를 찾아 수정 전후를 비교하세요.
         </p>
         <p>
           <Loader2 className="spin" size={15} /> 작업공간을 불러오는 중입니다
@@ -883,6 +919,17 @@ export default function Home() {
                                 "변수 무결성 확인됨 · 원문과 이름·개수가 일치합니다"}
                             </span>
                           </div>
+                          <AiSuggestions
+                            key={`${project.id}:${entry.key}:${locale}:${project.revision}:${JSON.stringify(project.conditions)}`}
+                            project={project}
+                            entry={entry}
+                            locale={locale}
+                            signedIn={status.signedIn}
+                            connected={!!status.gemini}
+                            disabled={!!busy}
+                            onApply={applyAiSuggestion}
+                            onSetup={() => setView("settings")}
+                          />
                           <div className="divider" />
                           <div className="field-heading">
                             <h3>UI 미리보기</h3>
@@ -1439,6 +1486,18 @@ export default function Home() {
                     state={status.google ? "키 설정됨" : "키 필요"}
                     connected={status.google}
                   />
+                  <div className="connection-help">
+                    <strong>생성형 AI · Google Gemini</strong>
+                    <p>
+                      {status.gemini
+                        ? "Gemini AI 키 설정됨 · 문구 상세에서 짧은 후보 생성과 실측을 사용할 수 있습니다."
+                        : "Gemini 키를 서버의 비밀 환경변수 GEMINI_API_KEY에 등록하세요. 실제 키를 원문이나 채팅에 넣지 마세요."}
+                    </p>
+                    <small>사용자당 하루 최대 20회 · 동일 입력은 AI 결과 캐시 재사용</small>
+                    <a href="https://aistudio.google.com/api-keys" target="_blank" rel="noreferrer">
+                      Google AI Studio 열기 <ArrowUpRight size={13} />
+                    </a>
+                  </div>
                   <div className="connection-help">
                     {status.google ? (
                       <>
