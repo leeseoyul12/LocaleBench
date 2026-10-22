@@ -38,7 +38,7 @@ export async function POST(request: Request) {
       throw new HttpError(503, "MODEL", "서버의 Gemini 모델 설정을 확인해 주세요.");
     const id =
       "gemini:" +
-      (await digest(JSON.stringify([user.userId, entry, target, project.conditions, model])));
+      (await digest(JSON.stringify(["concise-v2", user.userId, entry, target, project.conditions, model])));
     const cached = await db
       .prepare("SELECT payload FROM translation_cache WHERE id=? AND owner_id=?")
       .bind(id, user.userId)
