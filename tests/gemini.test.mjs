@@ -30,6 +30,11 @@ test("AI candidates discard duplicate, unchanged, empty and corrupted placeholde
   ] }, entry.source, entry.translations.de), [{ text: "Hallo {name}", reason: "valid" }]);
   assert.throws(() => validateCandidates({ candidates: [{ text: "Hallo", reason: "wrong" }] }, entry.source, entry.translations.de));
 });
+
+test("German and French targets reject an evident Korean output mix-up", () => {
+  const response={candidates:[{text:"지금 시작",reason:"wrong language"},{text:"Starten",reason:"짧은 독일어"}]};
+  assert.deepEqual(validateCandidates(response,"Start now","Jetzt starten","de"),[{text:"Starten",reason:"짧은 독일어"}]);
+});
 test("Gemini errors never expose the key or provider response", async () => {
   for (const status of [400, 403, 404, 429, 500]) await assert.rejects(
     () => suggestWithGemini(entry, "de", conditions, "private-test", undefined, async () => Response.json({ key: "private-test" }, { status })),
